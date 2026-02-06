@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Imposter: Party Game</title>
+    <style>
+        /* Modern Reset & Variables */
+        :root {
+            --bg-dark: #0f172a;
+            --card-bg: #1e293b;
+            --surface-light: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-purple: #8b5cf6;
+        }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Container & Card Styling */
+        .app-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Typography */
+        h1 {
+            font-weight: 900;
+            font-size: 2.5rem;
+            margin: 0 0 0.5rem 0;
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1px;
+        }
+        h2 { margin: 0 0 1rem 0; font-size: 1.5rem; }
+        p { color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem; }
+        .stat-val { font-size: 2rem; font-weight: 800; color: white; }
+        .stat-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+
+        /* Inputs & Forms */
+        .control-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .input-group { flex: 1; text-align: left; }
+        label { display: block; font-size: 0.8rem; margin-bottom: 0.5rem; color: var(--text-muted); font-weight: 600; }
+        select, input {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--bg-dark);
+            border: 2px solid var(--surface-light);
+            border-radius: 0.75rem;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+        select:focus, input:focus { border-color: var(--accent-blue); }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: var(--accent-blue); color: white; }
+        .btn-danger { background: var(--accent-red); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--surface-light); color: var(--text-muted); }
+        
+        /* Game Specific Styles */
+        .role-card {
+            background: var(--bg-dark);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin: 1rem 0;
+            border: 2px dashed var(--surface-light);
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        .role-hidden-content { filter: blur(12px); transition: filter 0.3s; }
+        .revealed .role-hidden-content { filter: blur(0); }
+        
+        .timer-display {
+            font-variant-numeric: tabular-nums;
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            color: var(--text-main);
+        }
+
+        /* Utility */
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mode Selector */
+        .mode-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .mode-card {
+            background: var(--surface-light);
+            padding: 1rem;
+            border-radius: 1rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            opacity: 0.7;
+        }
+        .mode-card.active {
+            opacity: 1;
+            border-color: var(--accent-blue);
+            background: rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
+        }
+        .mode-card h3 { margin: 0; font-size: 1rem; }
+        .mode-card span { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+
+        /* Football Theme */
+        body.football-theme {
+            --bg-dark: #064e3b;
+            --card-bg: #065f46;
+            --surface-light: #10b981;
+            --accent-blue: #34d399;
+            --text-muted: #d1fae5;
+            /* Pitch Pattern */
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 40px,
+                rgba(255, 255, 255, 0.03) 40px,
+                rgba(255, 255, 255, 0.03) 80px
+            );
+        }
+        body.football-theme .mode-card.active {
+            border-color: #34d399;
+            background: rgba(52, 211, 153, 0.2);
+        }
+
+        /* Counter Controls */
+        .counter-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-dark);
+            border: 2px solid var(--surface-light);
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            height: 54px;
+            box-sizing: border-box;
+        }
+        .counter-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 0.5rem;
+            border: none;
+            background: var(--surface-light);
+            color: white;
+            font-size: 1.5rem;
+            line-height: 1;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            padding: 0;
+        }
+        .counter-btn:active { background: var(--accent-blue); }
+        .counter-val { 
+            font-size: 1.2rem; 
+            font-weight: bold; 
+            flex: 1; 
+            text-align: center; 
+            user-select: none;
+        }
+
+        /* Falling Footballs Effect */
+        .football-bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .falling-ball {
+            position: absolute;
+            top: -10vh;
+            font-size: 2rem;
+            animation: fall linear infinite;
+            opacity: 0.4;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(110vh) rotate(360deg); }
+        }
+
+        /* Disguise Mode */
+        #disguise-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 9999;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            color: white;
+        }
+        #disguise-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        
+        #disguise-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            z-index: 9998;
+            padding: 40px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: none;
+        }
+        #disguise-layer.active { display: block; }
+
+        .paper-sheet {
+            background: white;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 60px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            min-height: 100vh;
+            box-sizing: border-box;
+            font-family: 'Times New Roman', Times, serif;
+            color: #000;
+        }
+        
+        .paper-sheet h1 {
+            font-size: 2.5rem;
+            color: #000;
+            border-bottom: 3px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            background: none;
+            -webkit-text-fill-color: initial;
+            text-align: left;
+        }
+        
+        .paper-sheet h2 {
+            font-size: 1.5rem;
+            color: #444;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-weight: normal;
+            font-style: italic;
+            border: none;
+            text-align: left;
+        }
+
+        .paper-sheet h3 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #000;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        .paper-sheet p, .paper-sheet li {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #222;
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        .paper-sheet strong {
+            color: #000;
+            font-weight: bold;
+        }
+
+        .paper-sheet .formula-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <button id="disguise-btn" onclick="toggleDisguise()" title="Disguise Mode">🎓</button>
+    
+    <div id="disguise-layer">
+        <div class="paper-sheet"></div>
+    </div>
+
+    <div class="app-container" id="app"></div>
+
+    <script>
+        document.write('<script src="categories.js?v=' + Date.now() + '"><\/script>');
+    </script>
+    <script>
+        const app = document.getElementById('app');
+        
+        // --- Game State ---
+        let state = {
+            players: 4,
+            imposters: 1,
+            mode: 'mix', // 'mix' or 'football'
+            hardMode: false, // If true, Imposter sees NOTHING (standard spyfall)
+            suddenDeath: false, // Shorter timer, 2 hints
+            timerDuration: 5, // minutes
+            
+            // Runtime
+            usedWords: [],
+            playerSpecificHints: {},
+            currentRoles: [],
+            currentPlayerIndex: 0,
+            currentWord: "",
+            currentHint: "",
+            startPlayerIndex: 0,
+            timerInterval: null,
+            secondsLeft: 0
+        };
+
+        // --- Screens ---
+
+        const Screens = {
+            Setup: () => {
+                clearInterval(state.timerInterval);
+                return `
+                <div class="card fade-in">
+                    <h1>IMPOSTER</h1>
+                    <p>Identify the liar before time runs out.</p>
+                    
+                    <div class="mode-selector">
+                        <div id="btn-mix" class="mode-card ${state.mode === 'mix' ? 'active' : ''}" onclick="Actions.setMode('mix')">
+                            <span>🎲</span>
+                            <h3>Mix It Up</h3>
+                        </div>
+                        <div id="btn-foot" class="mode-card ${state.mode === 'football' ? 'active' : ''}" onclick="Actions.setMode('football')">
+                            <span>⚽</span>
+                            <h3>Football</h3>
+                        </div>
+                    </div>
+
+                    <div class="control-row">
+                        <div class="input-group">
+                            <label>Players</label>
+                            <div class="counter-wrapper">
+                                <button class="counter-btn" onclick="Actions.adjustCount('players', -1)">-</button>
+                                <span class="counter-val" id="p-count-display">${state.players}</span>
+                                <button class="counter-btn" onclick="Actions.adjustCount('players', 1)">+</button>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Imposters</label>
+                            <div class="counter-wrapper">
+                                <button class="counter-btn" onclick="Actions.adjustCount('imposters', -1)">-</button>
+                                <span class="counter-val" id="i-count-display">${state.imposters}</span>
+                                <button class="counter-btn" onclick="Actions.adjustCount('imposters', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="display:flex; align-items:center; margin-bottom: 0.5rem; gap: 10px;">
+                        <input type="checkbox" id="hard-mode" style="width: auto;" ${state.hardMode ? 'checked' : ''}>
+                        <label for="hard-mode" style="margin:0; cursor:pointer;">Hard Mode (Imposter gets NO hint)</label>
+                    </div>
+                    <div class="input-group" style="display:flex; align-items:center; margin-bottom: 2rem; gap: 10px;">
+                        <input type="checkbox" id="sudden-death" style="width: auto;" ${state.suddenDeath ? 'checked' : ''}>
+                        <label for="sudden-death" style="margin:0; cursor:pointer; color: var(--accent-red); font-weight:bold;">Sudden Death (2 Mins + 2 Hints)</label>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="Actions.startGame()">Start Game</button>
+                    <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; opacity: 0.7;" onclick="Actions.resetSession(this)">Reset Word History</div>
+                </div>
+                `;
+            },
+
+            PassDevice: () => {
+                return `
+                <div class="card fade-in">
+                    <h2>Player ${state.currentPlayerIndex + 1}</h2>
+                    <p>Pass the device to Player ${state.currentPlayerIndex + 1}.</p>
+                    <div style="font-size: 6rem; margin: 2rem 0;">🤫</div>
+                    <button class="btn btn-primary" onclick="Actions.revealRole()">Tap to Reveal</button>
+                </div>
+                `;
+            },
+
+            Reveal: (role, info) => {
+                const isImp = role === 'Imposter';
+                const color = isImp ? 'var(--accent-red)' : 'var(--accent-blue)';
+                const icon = isImp ? '🔪' : '🕵️';
+                
+                return `
+                <div class="card fade-in">
+                    <p>Tap card to hide</p>
+                    <div class="role-card" onclick="Actions.nextPlayer()">
+                        <div style="font-size: 4rem; margin-bottom: 0.5rem;">${icon}</div>
+                        <h2 style="color: ${color}; font-size: 2rem; text-transform: uppercase;">${role}</h2>
+                        <div style="border-top: 1px solid #334155; margin-top: 1rem; padding-top: 1rem;">
+                            <div class="stat-label">${isImp ? (state.hardMode ? 'Good Luck' : 'Your Hint') : 'The Secret Word'}</div>
+                            <div style="font-size: 2rem; font-weight: 800; color: white;">${info}</div>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline" onclick="Actions.nextPlayer()">Hide & Pass</button>
+                </div>
+                `;
+            },
+
+            GameActive: () => {
+                const startPlayer = state.startPlayerIndex + 1;
+                return `
+                <div class="card fade-in">
+                    <div class="stat-label">Game in Progress</div>
+                    <div class="timer-display" id="timer">05:00</div>
+                    
+                    <div style="background: var(--surface-light); padding: 1rem; border-radius: 1rem; margin-bottom: 2rem;">
+                        <span style="font-size: 1.5rem;">👉</span>
+                        <span style="font-weight: bold;">Player ${startPlayer}</span> asks the first question.
+                    </div>
+
+                    <div class="control-row">
+                        <div class="input-group" style="text-align: center;">
+                            <div class="stat-val">${state.imposters}</div>
+                            <div class="stat-label">Imposters</div>
+                        </div>
+                         <div class="input-group" style="text-align: center;">
+                            <div class="stat-val">${state.players}</div>
+                            <div class="stat-label">Total</div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="Actions.startGame()">Play Again</button>
+                    <button class="btn btn-danger" onclick="Actions.resetGame()">End Game</button>
+                </div>
+                `;
+            }
+        };
+
+        // --- Logic & Actions ---
+
+        const Actions = {
+            init: () => {
+                app.innerHTML = Screens.Setup();
+                Actions.setMode(state.mode);
+            },
+
+            setMode: (mode) => {
+                state.mode = mode;
+                if (mode === 'football') {
+                    document.body.classList.add('football-theme');
+                    Actions.startFootballEffect();
+                } else {
+                    document.body.classList.remove('football-theme');
+                    Actions.stopFootballEffect();
+                }
+                const btnMix = document.getElementById('btn-mix');
+                const btnFoot = document.getElementById('btn-foot');
+                if (btnMix && btnFoot) {
+                    btnMix.className = `mode-card ${mode === 'mix' ? 'active' : ''}`;
+                    btnFoot.className = `mode-card ${mode === 'football' ? 'active' : ''}`;
+                }
+            },
+
+            adjustCount: (type, delta) => {
+                if (type === 'players') {
+                    let newVal = state.players + delta;
+                    if (newVal < 3) newVal = 3;
+                    if (newVal > 15) newVal = 15;
+                    state.players = newVal;
+                    
+                    // Enforce Imposter Cap (must be < players)
+                    if (state.imposters >= state.players) {
+                        state.imposters = state.players - 1;
+                        const iDisplay = document.getElementById('i-count-display');
+                        if(iDisplay) iDisplay.innerText = state.imposters;
+                    }
+                    
+                    const pDisplay = document.getElementById('p-count-display');
+                    if(pDisplay) pDisplay.innerText = state.players;
+                } 
+                else if (type === 'imposters') {
+                    let newVal = state.imposters + delta;
+                    if (newVal < 1) newVal = 1;
+                    if (newVal > 3) newVal = 3;
+                    
+                    // Enforce Logic (Imposters < Players)
+                    if (newVal >= state.players) return; 
+                    
+                    state.imposters = newVal;
+                    const iDisplay = document.getElementById('i-count-display');
+                    if(iDisplay) iDisplay.innerText = state.imposters;
+                }
+            },
+
+            startFootballEffect: () => {
+                if (document.getElementById('football-bg')) return;
+                
+                const container = document.createElement('div');
+                container.id = 'football-bg';
+                container.className = 'football-bg-container';
+                document.body.appendChild(container);
+
+                // Create falling balls
+                for (let i = 0; i < 20; i++) {
+                    const ball = document.createElement('div');
+                    ball.innerText = '⚽';
+                    ball.className = 'falling-ball';
+                    ball.style.left = Math.random() * 100 + 'vw';
+                    ball.style.animationDuration = (Math.random() * 5 + 3) + 's'; // 3-8s
+                    ball.style.animationDelay = (Math.random() * 5) + 's';
+                    ball.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+                    container.appendChild(ball);
+                }
+            },
+
+            stopFootballEffect: () => {
+                const container = document.getElementById('football-bg');
+                if (container) container.remove();
+            },
+
+            resetSession: (el) => {
+                state.usedWords = [];
+                const original = el.innerText;
+                el.innerText = "History Cleared!";
+                setTimeout(() => el.innerText = original, 1500);
+            },
+
+            startGame: () => {
+                clearInterval(state.timerInterval);
+
+                // Get inputs (only if on setup screen)
+                const hardModeEl = document.getElementById('hard-mode');
+                if (hardModeEl) state.hardMode = hardModeEl.checked;
+                const suddenDeathEl = document.getElementById('sudden-death');
+                if (suddenDeathEl) state.suddenDeath = suddenDeathEl.checked;
+
+                if (state.imposters >= state.players) { alert("Too many imposters!"); return; }
+
+                // Role Logic
+                state.currentRoles = Array(state.players).fill('Crewmate');
+                let assigned = 0;
+                while(assigned < state.imposters) {
+                    const idx = Math.floor(Math.random() * state.players);
+                    if(state.currentRoles[idx] === 'Crewmate') { state.currentRoles[idx] = 'Imposter'; assigned++; }
+                }
+
+                // Word Logic
+                let pool = [];
+                if (state.mode === 'mix') {
+                    pool = [...categories.objects, ...categories.food, ...categories.places];
+                } else {
+                    pool = [...categories.footballers, ...categories.footballTeams, ...categories.footballGoals];
+                }
+                
+                // Filter used words
+                let available = pool.filter(p => !state.usedWords.includes(p.word));
+                if (available.length === 0) {
+                    state.usedWords = []; // Reset if all used
+                    available = pool;
+                }
+
+                const scenario = available[Math.floor(Math.random() * available.length)];
+                state.usedWords.push(scenario.word);
+                state.currentWord = scenario.word;
+                
+                // Distribute Hints to Imposters
+                state.playerSpecificHints = {};
+                const imposterIndices = state.currentRoles.map((r, i) => r === 'Imposter' ? i : -1).filter(i => i !== -1);
+                const shuffledHints = [...scenario.hints].sort(() => 0.5 - Math.random());
+
+                imposterIndices.forEach((playerIdx, i) => {
+                    let hint = "";
+                    if (state.suddenDeath) {
+                        // 2 hints, rotated so they are different if possible
+                        const h1 = shuffledHints[i % shuffledHints.length];
+                        const h2 = shuffledHints[(i + 1) % shuffledHints.length];
+                        hint = `${h1} + ${h2}`;
+                    } else {
+                        // 1 hint, rotated
+                        hint = shuffledHints[i % shuffledHints.length];
+                    }
+                    state.playerSpecificHints[playerIdx] = hint;
+                });
+
+                state.timerDuration = state.suddenDeath ? 2 : 5;
+                
+                // Pick random starter
+                state.startPlayerIndex = Math.floor(Math.random() * state.players);
+
+                // Start Flow
+                state.currentPlayerIndex = 0;
+                app.innerHTML = Screens.PassDevice();
+            },
+
+            revealRole: () => {
+                const role = state.currentRoles[state.currentPlayerIndex];
+                let info = "";
+                
+                if (role === 'Crewmate') {
+                    info = state.currentWord;
+                } else {
+                    // Imposter Logic
+                    if (state.hardMode) {
+                        info = "???";
+                    } else {
+                        info = state.playerSpecificHints[state.currentPlayerIndex];
+                    }
+                }
+                app.innerHTML = Screens.Reveal(role, info);
+            },
+
+            nextPlayer: () => {
+                state.currentPlayerIndex++;
+                if (state.currentPlayerIndex >= state.players) {
+                    Actions.runTimer();
+                } else {
+                    app.innerHTML = Screens.PassDevice();
+                }
+            },
+
+            runTimer: () => {
+                state.secondsLeft = state.timerDuration * 60;
+                app.innerHTML = Screens.GameActive();
+                
+                state.timerInterval = setInterval(() => {
+                    state.secondsLeft--;
+                    const m = Math.floor(state.secondsLeft / 60).toString().padStart(2, '0');
+                    const s = (state.secondsLeft % 60).toString().padStart(2, '0');
+                    
+                    const el = document.getElementById('timer');
+                    if(el) el.innerText = `${m}:${s}`;
+
+                    if (state.secondsLeft <= 0) {
+                        clearInterval(state.timerInterval);
+                        if(el) {
+                            el.innerText = "00:00";
+                            el.style.color = "var(--accent-red)";
+                        }
+                    }
+                }, 1000);
+            },
+
+            resetGame: () => {
+                clearInterval(state.timerInterval);
+                Actions.init();
+            }
+        };
+
+        const disguiseTopics = [
+    {
+        title: "A-Level Mathematics: Pure 4 - Advanced Integration & Differential Equations",
+        topic: "Integration Techniques and Modelling",
+        content: `
+            <h3 style="color: #000;">1. Integration by Substitution</h3>
+            <p style="color: #000; line-height: 1.6;">When a function is in the form $f(g(x))g'(x)$, we use $u = g(x)$. Remember to change the limits of the integral and substitute $dx$ for $du$. For example, to integrate $\int x\sqrt{x^2+1} dx$, let $u = x^2+1$, then $du/dx = 2x$.</p>
+            
+            <h3 style="color: #000; margin-top: 30px;">2. Integration by Parts</h3>
+            <p style="color: #000; line-height: 1.6;">Derived from the product rule: $\int u \frac{dv}{dx} dx = uv - \int v \frac{du}{dx} dx$. Use the <strong>LATE</strong> rule to choose $u$ (Logs, Algebra, Trig, Exponentials).</p>
+            
+            
+            <h3 style="color: #000; margin-top: 30px;">3. First-Order Differential Equations</h3>
+            <p style="color: #000; line-height: 1.6;">Equations in the form $\frac{dy}{dx} = g(x)h(y)$ can be solved by <strong>Separation of Variables</strong>. Ensure the '+C' constant of integration is added before applying boundary conditions to find a <strong>Particular Solution</strong>.</p>
+            <p style="color: #000; line-height: 1.6;">Applications often involve exponential growth and decay models: $\frac{dP}{dt} = kP$, which integrates to $P = Ae^{kt}$.</p>`
+    }
+];
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const now = Date.now();
+                if (now - lastEscTime < 500) {
+                    toggleDisguise();
+                }
+                lastEscTime = now;
+            }
+        });
+
+        function toggleDisguise() {
+            const layer = document.getElementById('disguise-layer');
+            const btn = document.getElementById('disguise-btn');
+            const isActive = layer.classList.contains('active');
+            
+            if (isActive) {
+                layer.classList.remove('active');
+                document.title = "Imposter: Party Game";
+                btn.innerText = '🎓';
+                btn.style.color = 'white';
+                btn.style.background = 'rgba(255, 255, 255, 0.1)';
+            } else {
+                // Randomize Content
+                const topic = disguiseTopics[Math.floor(Math.random() * disguiseTopics.length)];
+                const contentDiv = layer.children[0];
+                contentDiv.innerHTML = `
+                    <h1>${topic.title}</h1>
+                    <h2>Topic: ${topic.topic}</h2>
+                    ${topic.content}
+                `;
+
+                layer.classList.add('active');
+                document.title = topic.title.split(':')[0];
+                btn.innerText = '❌';
+                btn.style.color = '#333';
+                btn.style.background = 'rgba(0, 0, 0, 0.1)';
+            }
+        }
+
+        // Initialize
+        Actions.init();
+
+    </script>
+</body>
+</html>

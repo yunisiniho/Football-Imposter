@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Football Imposter is a browser-based party game inspired by Spyfall. Players try to identify an "imposter" who receives clues about the secret word rather than the word itself. The game supports a general "Mix It Up" mode and a football-specific mode with 100+ footballer names, teams, and goal types.
+Football Imposter is a browser-based party game inspired by Spyfall. Players try to identify an "imposter" who receives clues about the secret word rather than the word itself. The game is exclusively football-themed, drawing from 100+ footballer names, teams, and goal types.
 
 ## Repository Structure
 
@@ -48,7 +48,6 @@ let state = {
     // Config (set on setup screen)
     players: 4,
     imposters: 1,
-    mode: 'mix',        // 'mix' | 'football'
     hardMode: false,    // imposter sees no hint
     suddenDeath: false, // 2-min timer, 2 hints
 
@@ -75,8 +74,7 @@ let state = {
 **4. Actions object** — All game logic:
 | Action | Purpose |
 |--------|---------|
-| `init()` | First load, renders Setup screen |
-| `setMode(mode)` | Switch between 'mix' / 'football', toggles `football-theme` |
+| `init()` | First load, renders Setup screen and applies football theme |
 | `adjustCount(type, delta)` | Increment/decrement players (3–15) or imposters (1–3) |
 | `startGame()` | Assigns roles, picks word, distributes hints, starts pass-device flow |
 | `revealRole()` | Shows current player's role/word/hint |
@@ -135,13 +133,8 @@ app.innerHTML = Screens.MyScreen();
 ### State Mutations
 Mutate `state` directly — there is no reactivity layer. After mutating, re-render affected DOM nodes manually (e.g. `document.getElementById('p-count-display').innerText = state.players`) or re-render the full screen.
 
-### Theme Switching
-Apply the football theme by toggling `body.football-theme` (a CSS class). All colour variables cascade from this class — do not hardcode colours outside of the `:root` block.
-
-```js
-document.body.classList.add('football-theme');    // football mode
-document.body.classList.remove('football-theme'); // mix mode
-```
+### Theme
+The football theme (`body.football-theme`) is always active — applied on `init()` and never removed. All colour variables cascade from this class — do not hardcode colours outside of the `:root` block.
 
 ## Adding New Content
 
@@ -154,11 +147,9 @@ Each entry **must** have exactly 3 hints.
 
 ### Adding a new category
 1. Add the array to `categories.js` under a new key.
-2. In `imposter.html` → `Actions.startGame()`, extend the pool-building block:
+2. In `imposter.html` → `Actions.startGame()`, extend the pool-building line:
    ```js
-   if (state.mode === 'mix') {
-       pool = [...categories.objects, ...categories.food, ...categories.places, ...categories.newCategory];
-   }
+   const pool = [...categories.footballers, ...categories.footballTeams, ...categories.footballGoals, ...categories.newCategory];
    ```
 
 ### Adding a new disguise topic

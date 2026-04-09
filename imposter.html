@@ -135,31 +135,6 @@
         .fade-in { animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Mode Selector */
-        .mode-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .mode-card {
-            background: var(--surface-light);
-            padding: 1rem;
-            border-radius: 1rem;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.2s;
-            opacity: 0.7;
-        }
-        .mode-card.active {
-            opacity: 1;
-            border-color: var(--accent-blue);
-            background: rgba(59, 130, 246, 0.1);
-            transform: scale(1.02);
-        }
-        .mode-card h3 { margin: 0; font-size: 1rem; }
-        .mode-card span { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
-
         /* Football Theme */
         body.football-theme {
             --bg-dark: #064e3b;
@@ -176,11 +151,6 @@
                 rgba(255, 255, 255, 0.03) 80px
             );
         }
-        body.football-theme .mode-card.active {
-            border-color: #34d399;
-            background: rgba(52, 211, 153, 0.2);
-        }
-
         /* Counter Controls */
         .counter-wrapper {
             display: flex;
@@ -364,7 +334,6 @@
         let state = {
             players: 4,
             imposters: 1,
-            mode: 'mix', // 'mix' or 'football'
             hardMode: false, // If true, Imposter sees NOTHING (standard spyfall)
             suddenDeath: false, // Shorter timer, 2 hints
             timerDuration: 5, // minutes
@@ -388,19 +357,8 @@
                 clearInterval(state.timerInterval);
                 return `
                 <div class="card fade-in">
-                    <h1>IMPOSTER</h1>
-                    <p>Identify the liar before time runs out.</p>
-                    
-                    <div class="mode-selector">
-                        <div id="btn-mix" class="mode-card ${state.mode === 'mix' ? 'active' : ''}" onclick="Actions.setMode('mix')">
-                            <span>🎲</span>
-                            <h3>Mix It Up</h3>
-                        </div>
-                        <div id="btn-foot" class="mode-card ${state.mode === 'football' ? 'active' : ''}" onclick="Actions.setMode('football')">
-                            <span>⚽</span>
-                            <h3>Football</h3>
-                        </div>
-                    </div>
+                    <h1>⚽ IMPOSTER</h1>
+                    <p>Spot the football imposter before time runs out.</p>
 
                     <div class="control-row">
                         <div class="input-group">
@@ -503,24 +461,8 @@
         const Actions = {
             init: () => {
                 app.innerHTML = Screens.Setup();
-                Actions.setMode(state.mode);
-            },
-
-            setMode: (mode) => {
-                state.mode = mode;
-                if (mode === 'football') {
-                    document.body.classList.add('football-theme');
-                    Actions.startFootballEffect();
-                } else {
-                    document.body.classList.remove('football-theme');
-                    Actions.stopFootballEffect();
-                }
-                const btnMix = document.getElementById('btn-mix');
-                const btnFoot = document.getElementById('btn-foot');
-                if (btnMix && btnFoot) {
-                    btnMix.className = `mode-card ${mode === 'mix' ? 'active' : ''}`;
-                    btnFoot.className = `mode-card ${mode === 'football' ? 'active' : ''}`;
-                }
+                document.body.classList.add('football-theme');
+                Actions.startFootballEffect();
             },
 
             adjustCount: (type, delta) => {
@@ -607,12 +549,7 @@
                 }
 
                 // Word Logic
-                let pool = [];
-                if (state.mode === 'mix') {
-                    pool = [...categories.objects, ...categories.food, ...categories.places];
-                } else {
-                    pool = [...categories.footballers, ...categories.footballTeams, ...categories.footballGoals];
-                }
+                const pool = [...categories.footballers, ...categories.footballTeams, ...categories.footballGoals];
                 
                 // Filter used words
                 let available = pool.filter(p => !state.usedWords.includes(p.word));

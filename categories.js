@@ -158,6 +158,20 @@ const categories = {
         { word: "Tap In", hints: ["Easy", "Close", "Pass"] },
         { word: "Long Shot", hints: ["Distance", "Power", "Scream"] },
         { word: "Chip", hints: ["Lob", "Over", "Keeper"] }
+    ],
+    footballPositions: [
+        { word: "Goalkeeper", hints: ["Gloves", "Penalty", "Last Man"] },
+        { word: "Centre Back", hints: ["Header", "Tackle", "Leader"] },
+        { word: "Left Back", hints: ["Overlap", "Wing", "Left"] },
+        { word: "Right Back", hints: ["Bomb On", "Wing", "Right"] },
+        { word: "Sweeper", hints: ["Cover", "Last", "Clean"] },
+        { word: "Defensive Mid", hints: ["Screen", "Shield", "Anchor"] },
+        { word: "Central Mid", hints: ["Box To Box", "Engine", "Link"] },
+        { word: "Attacking Mid", hints: ["Ten", "Vision", "Creative"] },
+        { word: "Left Winger", hints: ["Pace", "Dribble", "Left Foot"] },
+        { word: "Right Winger", hints: ["Pace", "Cross", "Right Foot"] },
+        { word: "False Nine", hints: ["Drop", "Space", "Confuse"] },
+        { word: "Striker", hints: ["Goal", "Poach", "Box"] }
     ]
 };
 
